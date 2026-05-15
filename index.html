@@ -29,6 +29,7 @@
             --system-blue: #00f2ff;
             --system-gold: #f59e0b;
             --system-red: #ff0033;
+            --system-purple: #a855f7;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -41,10 +42,33 @@
             overflow-x: hidden;
         }
 
+        /* System Glow : Version plus rapide et plus lumineuse */
         .system-glow {
-            position: fixed; top: -250px; right: -250px; width: 700px; height: 700px;
+            position: fixed; 
+            top: -250px; 
+            right: -250px; 
+            width: 700px; 
+            height: 700px;
             background: radial-gradient(circle, var(--rank-color) 0%, rgba(0,0,0,0) 75%);
-            filter: blur(60px); opacity: 0.2; z-index: -1; pointer-events: none;
+            filter: blur(50px); 
+            opacity: 0.15; 
+            z-index: -1; 
+            pointer-events: none;
+            animation: ambient-pulse 4s ease-in-out infinite alternate;
+        }
+
+        @keyframes ambient-pulse {
+            0% {
+                transform: scale(0.85) translate(0px, 0px);
+                opacity: 0.15;
+            }
+            50% {
+                opacity: 0.35; /* Pic de luminosité plus intense */
+            }
+            100% {
+                transform: scale(1.15) translate(-30px, 30px);
+                opacity: 0.20;
+            }
         }
 
         .container { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 20px; }
@@ -92,6 +116,26 @@
         .stat-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
         .stat-val { font-weight: 900; font-size: 1.1rem; display: block; margin-top: 5px; }
 
+        /* Case Épargne Globale */
+        .vault-card {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0) 100%);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.1);
+        }
+        .vault-title { color: var(--system-purple); font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; font-weight: 800; }
+        
+        .vault-display-container { display: flex; align-items: center; min-height: 38px; }
+        .vault-display { font-size: 1.6rem; font-weight: 900; font-family: monospace; color: #e9d5ff; text-shadow: 0 0 10px rgba(168, 85, 247, 0.3); cursor: pointer; display: inline-block; }
+        .edit-vault-icon { font-size: 0.9rem; margin-left: 8px; color: var(--text-dim); cursor: pointer; }
+        .edit-vault-icon:hover { color: var(--system-purple); }
+        
+        /* Input inline d'épargne */
+        .vault-input-inline {
+            font-size: 1.6rem; font-weight: 900; font-family: monospace; color: #e9d5ff;
+            background: rgba(168, 85, 247, 0.1); border: 1px solid var(--system-purple);
+            border-radius: 6px; width: 160px; padding: 2px 8px; outline: none; box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+        }
+
         .transaction-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px; border-bottom: 1px solid var(--border);
@@ -105,7 +149,7 @@
         .cat-food { background: rgba(249, 115, 22, 0.15); color: #f97316; }
         .cat-vie { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
         .cat-stuff { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-        .cat-invest { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .cat-epargne { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
         .cat-imprevu { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
         .cat-none { background: rgba(255, 255, 255, 0.05); color: var(--text-dim); }
 
@@ -113,6 +157,7 @@
         .t-amt { font-family: monospace; font-weight: 800; }
         .negative { color: var(--system-red); }
         .positive { color: #22c55e; }
+        .purple-text { color: #d8b4fe; }
 
         .progress-container { background: rgba(255, 255, 255, 0.05); height: 6px; margin: 15px 0; border-radius: 10px; }
         #progress-bar { background: var(--rank-color); height: 100%; width: 0%; box-shadow: 0 0 15px var(--rank-color); transition: 0.5s; }
@@ -124,9 +169,10 @@
 
 <div class="container">
     <div class="sidebar">
+        <!-- RANGS ET SOLDE COURANT -->
         <div class="card">
             <div class="rank-box">
-                <div class="system-title">Niveau de Trésorerie</div>
+                <div class="system-title">Mana Disponible (Compte Courant)</div>
                 <span id="rank-medal">E</span>
                 <div id="rank-name" style="font-weight: 900; color: var(--rank-color);">NOMADE DU BUDGET</div>
                 
@@ -136,19 +182,28 @@
                 <div id="daily-allowance" style="font-size: 0.8rem; color: var(--system-gold); font-weight: 700;">
                     MANA JOURNALIER : 0.00€
                 </div>
-                <p style="font-size: 0.6rem; color: var(--text-dim); margin-top: 5px;">Après déduction des charges récurrentes</p>
+                <p style="font-size: 0.6rem; color: var(--text-dim); margin-top: 5px;">Reste à vivre (hors charges et épargne)</p>
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <label>Revenus</label>
+                    <label>Revenus reçus</label>
                     <span id="stat-inc" class="stat-val positive">0€</span>
                 </div>
                 <div class="stat-card">
-                    <label>Dépenses</label>
+                    <label>Dépenses courantes</label>
                     <span id="stat-exp" class="stat-val negative">0€</span>
                 </div>
             </div>
+        </div>
+
+        <!-- CASE : COFFRE-FORT D'ÉPARGNE GLOBAL (INLINE EDIT) -->
+        <div class="card vault-card">
+            <div class="vault-title">🛡️ COFFRE-FORT GLOBAL (Livret A / PEA)</div>
+            <div class="vault-display-container" id="vault-wrapper">
+                <!-- Généré dynamiquement en JS (Texte ou Input) -->
+            </div>
+            <p style="font-size: 0.6rem; color: var(--text-dim); margin-top: 5px; margin-bottom: 0;">Solde total capitalisé (Clique pour modifier)</p>
         </div>
     </div>
 
@@ -158,7 +213,7 @@
             <div class="system-title">Nouvelle Mission de Flux</div>
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
                 <div class="input-group" style="margin: 0;">
-                    <label>Libellé (ex: Salaire, UberEats)</label>
+                    <label>Libellé (ex: Salaire, Virement Livret)</label>
                     <input type="text" id="desc" placeholder="Objet de la quête...">
                 </div>
                 <div class="input-group" style="margin: 0;">
@@ -171,9 +226,9 @@
                 <label>Type de Flux (Catégorie)</label>
                 <select id="category">
                     <option value="vie">🏠 Vie Quotidienne (Courses, Logement...)</option>
-                    <option value="food">🍖 Potions & Rations (Courses, Restos, Uber...)</option>
-                    <option value="stuff">⚔️ Équipement & Loisirs (Sorties, Jeux, Matériel...)</option>
-                    <option value="invest">💎 Cristaux & PEA (Épargne, Investissements...)</option>
+                    <option value="food">🍖 Potions & Rations (Restos, Uber...)</option>
+                    <option value="stuff">⚔️ Équipement & Loisirs (Sorties, Jeux...)</option>
+                    <option value="epargne">💎 Cristaux & Épargne (Envoi vers Livret A/PEA...)</option>
                     <option value="imprevu">⚠️ Anomalie / Imprévu (Urgence, Réparation...)</option>
                     <option value="mana">🌀 Source de Mana (Revenu / Salaire)</option>
                 </select>
@@ -181,17 +236,17 @@
 
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-primary" onclick="addTransaction('income')">+ REVENU</button>
-                <button class="btn" style="background: var(--system-red); color: white;" onclick="addTransaction('expense')">- DÉPENSE</button>
+                <button class="btn" style="background: var(--system-red); color: white;" onclick="addTransaction('expense')">- DÉPENSE / ENVOI COFFRE</button>
             </div>
         </div>
 
         <!-- DEPENSES RÉCURRENTES -->
         <div class="card">
-            <div class="system-title">Charges Récurrentes (Mensuel)</div>
+            <div class="system-title">Charges Récurrentes & Épargne Fixe (Mensuel)</div>
             <div id="recurring-list"></div>
             <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" id="recur-desc" placeholder="Ex: Netflix, Loyer...">
+                    <input type="text" id="recur-desc" placeholder="Ex: Netflix, Loyer, Épargne auto...">
                     <input type="number" id="recur-amount" placeholder="€">
                 </div>
                 <div class="input-group">
@@ -200,10 +255,10 @@
                         <option value="vie">🏠 Vie Quotidienne</option>
                         <option value="food">🍖 Potions & Rations</option>
                         <option value="stuff">⚔️ Équipement & Loisirs</option>
-                        <option value="invest">💎 Cristaux & PEA</option>
+                        <option value="epargne">💎 Cristaux & Épargne</option>
                     </select>
                 </div>
-                <button id="btn-recur-action" class="btn btn-ghost" onclick="addRecurring()" style="color: var(--system-blue); border-color: var(--system-blue);">+ AJOUTER CHARGE FIXE</button>
+                <button id="btn-recur-action" class="btn btn-ghost" onclick="addRecurring()" style="color: var(--system-blue); border-color: var(--system-blue);">+ AJOUTER FIXE</button>
             </div>
         </div>
 
@@ -217,21 +272,24 @@
 </div>
 
 <script>
-    let state = JSON.parse(localStorage.getItem('bank_system_v2')) || {
+    let state = JSON.parse(localStorage.getItem('bank_system_v3')) || {
         transactions: [],
         recurring: [],
+        vaultBase: 0.00,
         lastProcessedMonth: new Date().getMonth()
     };
 
     let editingRecurringId = null; 
+    let isEditingVaultInline = false;
 
     const RANKS = [
-        { name: "SANG-FROID (S)", min: 80, icon: "S", color: "#ff0055" },
-        { name: "CHASSEUR D'ÉLITE (A)", min: 60, icon: "A", color: "#f59e0b" },
-        { name: "MAGE DE GUERRE (B)", min: 40, icon: "B", color: "#a855f7" },
-        { name: "AVENTURIER (C)", min: 20, icon: "C", color: "#3b82f6" },
-        { name: "SURVIVANT (D)", min: 5, icon: "D", color: "#22c55e" },
-        { name: "NOMADE (E)", min: -999999, icon: "E", color: "#94a3b8" }
+        { name: "MONARQUE DE L'OMBRE (S)", min: 1000, icon: "S", color: "#ff0055" },
+        { name: "MAÎTRE DE GUILDE (A)", min: 700, icon: "A", color: "#f59e0b" },
+        { name: "EXORCISTE SUPÉRIEUR (B)", min: 400, icon: "B", color: "#a855f7" },
+        { name: "CHASSEUR DE SANG (C)", min: 100, icon: "C", color: "#3b82f6" },
+        { name: "ÉCLAIREUR (D)", min: 50, icon: "D", color: "#22c55e" },
+        { name: "VAGABOND (E)", min: 0, icon: "E", color: "#94a3b8" },
+        { name: "NÉCROSE DU COMPTE (F)", min: -999999, icon: "F", color: "#7f1d1d" }
     ];
 
     const CAT_LABELS = {
@@ -239,7 +297,7 @@
         food: { txt: 'Potion', cls: 'cat-food' },
         vie: { txt: 'Vie Q.', cls: 'cat-vie' },
         stuff: { txt: 'Stuff', cls: 'cat-stuff' },
-        invest: { txt: 'Invest', cls: 'cat-invest' },
+        epargne: { txt: 'Épargne', cls: 'cat-epargne' },
         imprevu: { txt: 'Imprévu', cls: 'cat-imprevu' }
     };
 
@@ -250,27 +308,81 @@
     }
 
     function save() {
-        localStorage.setItem('bank_system_v2', JSON.stringify(state));
+        localStorage.setItem('bank_system_v3', JSON.stringify(state));
         updateUI();
+    }
+
+    function enableVaultInlineEdit() {
+        if (isEditingVaultInline) return;
+        isEditingVaultInline = true;
+
+        const currentTotal = state.vaultBase + calculateVaultFluxes();
+        const wrapper = document.getElementById('vault-wrapper');
+        
+        wrapper.innerHTML = `
+            <input type="number" step="0.01" class="vault-input-inline" id="vault-edit-input" value="${currentTotal.toFixed(2)}">
+        `;
+
+        const input = document.getElementById('vault-edit-input');
+        input.focus();
+        input.select();
+
+        input.addEventListener('blur', saveVaultInlineEdit);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') saveVaultInlineEdit();
+        });
+    }
+
+    function saveVaultInlineEdit() {
+        const input = document.getElementById('vault-edit-input');
+        if (!input) return;
+
+        const newTotal = parseFloat(input.value);
+        if (!isNaN(newTotal)) {
+            state.vaultBase = newTotal - calculateVaultFluxes();
+        }
+        
+        isEditingVaultInline = false;
+        save();
+    }
+
+    function calculateVaultFluxes() {
+        let accumulated = 0;
+        state.recurring.forEach(r => {
+            if(r.category === 'epargne') accumulated += Math.abs(r.amount);
+        });
+        state.transactions.forEach(t => {
+            if (t.amount < 0 && t.category === 'epargne') accumulated += Math.abs(t.amount);
+        });
+        return accumulated;
     }
 
     function checkMonthTransition() {
         const now = new Date();
         const currentMonth = now.getMonth();
 
+        if (state.vaultBase === undefined) state.vaultBase = 0;
+
         if (state.lastProcessedMonth !== undefined && state.lastProcessedMonth !== currentMonth) {
             let income = 0;
             let expenses = 0;
             let totalRecurring = 0;
 
-            state.recurring.forEach(r => totalRecurring += Math.abs(r.amount));
+            state.recurring.forEach(r => {
+                totalRecurring += Math.abs(r.amount);
+                if(r.category === 'epargne') state.vaultBase += Math.abs(r.amount);
+            });
+            
             state.transactions.forEach(t => {
                 if (t.amount > 0) income += t.amount;
-                else expenses += Math.abs(t.amount);
+                else {
+                    expenses += Math.abs(t.amount);
+                    if(t.category === 'epargne') state.vaultBase += Math.abs(t.amount);
+                }
             });
 
             const leftover = income - expenses - totalRecurring;
-            state.transactions = [];
+            state.transactions = []; 
 
             if (leftover > 0) {
                 state.transactions.push({
@@ -284,7 +396,7 @@
             }
 
             state.lastProcessedMonth = currentMonth;
-            localStorage.setItem('bank_system_v2', JSON.stringify(state));
+            localStorage.setItem('bank_system_v3', JSON.stringify(state));
         }
     }
 
@@ -338,7 +450,7 @@
             }
             editingRecurringId = null;
             const btn = document.getElementById('btn-recur-action');
-            btn.innerText = "+ AJOUTER CHARGE FIXE";
+            btn.innerText = "+ AJOUTER FIXE";
             btn.style.borderColor = "var(--system-blue)";
             btn.style.color = "var(--system-blue)";
         } else {
@@ -364,7 +476,7 @@
         if (editingRecurringId === id) {
             editingRecurringId = null;
             const btn = document.getElementById('btn-recur-action');
-            btn.innerText = "+ AJOUTER CHARGE FIXE";
+            btn.innerText = "+ AJOUTER FIXE";
             btn.style.borderColor = "var(--system-blue)";
             btn.style.color = "var(--system-blue)";
         }
@@ -373,9 +485,10 @@
     }
 
     function resetSystem() {
-        if(confirm("Effacer tout l'historique et les charges fixes ?")) {
+        if(confirm("Effacer tout l'historique, l'épargne et les charges fixes ?")) {
             state.transactions = [];
             state.recurring = [];
+            state.vaultBase = 0;
             state.lastProcessedMonth = new Date().getMonth();
             save();
         }
@@ -390,9 +503,12 @@
         let income = 0;
         let expenses = 0;
         let totalRecurring = 0;
+        let dynamicVaultFlux = 0;
 
         state.recurring.forEach(r => {
             totalRecurring += Math.abs(r.amount);
+            if(r.category === 'epargne') dynamicVaultFlux += Math.abs(r.amount);
+
             recurList.innerHTML += `
                 <div class="transaction-item">
                     <div class="t-name">
@@ -400,7 +516,7 @@
                         <span class="recur-tag">FIXE</span>
                         ${getCatBadge(r.category)}
                     </div>
-                    <div class="t-amt negative">
+                    <div class="t-amt ${r.category === 'epargne' ? 'purple-text' : 'negative'}">
                         ${r.amount.toFixed(2)}€
                         <span style="margin-left:15px; cursor:pointer; color:var(--system-blue);" onclick="editRecurring('${r.id}')">✏️</span>
                         <span style="margin-left:10px; cursor:pointer;" onclick="deleteRecurring('${r.id}')">×</span>
@@ -412,8 +528,15 @@
         const displayTransactions = [...state.transactions].reverse();
 
         displayTransactions.forEach(t => {
-            if (t.amount > 0) income += t.amount;
-            else expenses += Math.abs(t.amount);
+            if (t.amount > 0) {
+                income += t.amount;
+            } else {
+                expenses += Math.abs(t.amount);
+                if (t.category === 'epargne') dynamicVaultFlux += Math.abs(t.amount);
+            }
+
+            let textClass = t.amount > 0 ? 'positive' : 'negative';
+            if (t.category === 'epargne') textClass = 'purple-text';
 
             list.innerHTML += `
                 <div class="transaction-item">
@@ -424,7 +547,7 @@
                         </div>
                         <div style="font-size:0.6rem; color:var(--text-dim)">${new Date(t.date).toLocaleDateString()}</div>
                     </div>
-                    <div class="t-amt ${t.amount > 0 ? 'positive' : 'negative'}">
+                    <div class="t-amt ${textClass}">
                         ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}€
                         <span style="margin-left:10px; cursor:pointer;" onclick="deleteTransaction(${t.id})">×</span>
                     </div>
@@ -432,20 +555,30 @@
             `;
         });
 
-        const total = income - expenses - totalRecurring;
-        document.getElementById('total-balance').innerText = total.toFixed(2);
+        const totalMana = income - expenses - totalRecurring;
+        const totalVault = state.vaultBase + dynamicVaultFlux;
+
+        if (!isEditingVaultInline) {
+            document.getElementById('vault-wrapper').innerHTML = `
+                <div class="vault-display" onclick="enableVaultInlineEdit()">${totalVault.toFixed(2)}€</div>
+                <span class="edit-vault-icon" onclick="enableVaultInlineEdit()">✏️</span>
+            `;
+        }
+
+        document.getElementById('total-balance').innerText = totalMana.toFixed(2);
+        
         document.getElementById('stat-inc').innerText = income.toFixed(2) + '€';
-        document.getElementById('stat-exp').innerText = (expenses + totalRecurring).toFixed(2) + '€';
+        document.getElementById('stat-exp').innerText = (expenses + totalRecurring - dynamicVaultFlux).toFixed(2) + '€';
 
         const now = new Date();
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const daysLeft = (lastDay - now.getDate()) + 1;
         
-        const daily = total > 0 ? (total / daysLeft) : 0;
+        const daily = totalMana > 0 ? (totalMana / daysLeft) : 0;
         document.getElementById('daily-allowance').innerText = `MANA JOURNALIER : ${daily.toFixed(2)}€`;
 
-        let ratio = income > 0 ? (total / income) * 100 : 0;
-        if (total < 0) ratio = -1;
+        let ratio = income > 0 ? (totalMana / income) * 100 : 0;
+        if (totalMana < 0) ratio = -1;
 
         let currentRank = RANKS[5];
         for (let r of RANKS) {
