@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#05070a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Eveil">
+    <meta name="apple-mobile-web-app-title" content="Finance Leveling">
     <title>S-SYSTEM | Finance Leveling</title>
     <style>
         :root {
@@ -52,22 +52,22 @@
             border: 1px solid var(--border);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             backdrop-filter: blur(20px);
+            margin-bottom: 20px;
         }
 
         .system-title { font-size: 0.65rem; letter-spacing: 3px; color: var(--rank-color); text-transform: uppercase; margin-bottom: 10px; font-weight: 800; }
         
-        /* Rank Display */
         .rank-box { text-align: center; padding: 10px 0; }
         #rank-medal { font-size: 6rem; font-weight: 900; color: var(--rank-color); display: block; text-shadow: 0 0 20px var(--rank-color); }
         .balance-display { font-size: 2.2rem; font-weight: 900; margin: 10px 0; font-family: monospace; }
         
-        /* Inputs */
         .input-group { margin-bottom: 15px; }
         label { display: block; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
         input {
             width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
-            padding: 12px; color: white; border-radius: 6px; font-size: 1rem;
+            padding: 12px; color: white; border-radius: 6px; font-size: 1rem; outline: none;
         }
+        input:focus { border-color: var(--system-blue); }
 
         .btn {
             padding: 12px; border-radius: 8px; border: none; cursor: pointer;
@@ -77,18 +77,18 @@
         .btn-primary { background: var(--system-blue); color: #000; }
         .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
 
-        /* Stats Grid */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .stat-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
         .stat-val { font-weight: 900; font-size: 1.1rem; display: block; margin-top: 5px; }
 
-        /* Transactions */
         .transaction-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px; border-bottom: 1px solid var(--border);
             font-size: 0.9rem;
         }
-        .t-name { font-weight: 600; }
+        .recur-tag { font-size: 0.6rem; background: rgba(0, 242, 255, 0.1); color: var(--system-blue); padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+        
+        .t-name { font-weight: 600; display: flex; align-items: center; }
         .t-amt { font-family: monospace; font-weight: 800; }
         .negative { color: var(--system-red); }
         .positive { color: #22c55e; }
@@ -102,7 +102,6 @@
 <div class="system-glow"></div>
 
 <div class="container">
-    <!-- SIDEBAR: STATUT -->
     <div class="sidebar">
         <div class="card">
             <div class="rank-box">
@@ -116,7 +115,7 @@
                 <div id="daily-allowance" style="font-size: 0.8rem; color: var(--system-gold); font-weight: 700;">
                     MANA JOURNALIER : 0.00€
                 </div>
-                <p style="font-size: 0.6rem; color: var(--text-dim); margin-top: 5px;">Reste à dépenser par jour pour finir le mois</p>
+                <p style="font-size: 0.6rem; color: var(--text-dim); margin-top: 5px;">Après déduction des charges récurrentes</p>
             </div>
 
             <div class="stats-grid">
@@ -132,14 +131,13 @@
         </div>
     </div>
 
-    <!-- MAIN: GESTION -->
     <div class="main-content">
         <!-- AJOUTER TRANSACTION -->
         <div class="card">
             <div class="system-title">Nouvelle Mission de Flux</div>
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
                 <div class="input-group">
-                    <label>Libellé (ex: Loyer, Salaire)</label>
+                    <label>Libellé (ex: Salaire, UberEats)</label>
                     <input type="text" id="desc" placeholder="Objet de la quête...">
                 </div>
                 <div class="input-group">
@@ -153,21 +151,34 @@
             </div>
         </div>
 
+        <!-- DEPENSES RÉCURRENTES -->
+        <div class="card">
+            <div class="system-title">Charges Récurrentes (Mensuel)</div>
+            <div id="recurring-list">
+                <!-- Les récurrentes apparaîtront ici -->
+            </div>
+            <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                    <input type="text" id="recur-desc" placeholder="Ex: Netflix, Loyer...">
+                    <input type="number" id="recur-amount" placeholder="€">
+                </div>
+                <button class="btn btn-ghost" onclick="addRecurring()" style="color: var(--system-blue); border-color: var(--system-blue);">+ AJOUTER CHARGE FIXE</button>
+            </div>
+        </div>
+
         <!-- LISTE DES FLUX -->
         <div class="card">
             <div class="system-title">Historique des Flux de Mana</div>
-            <div id="transaction-list">
-                <!-- Les transactions apparaîtront ici -->
-            </div>
-            <button class="btn btn-ghost" style="margin-top: 20px;" onclick="resetSystem()">RÉINITIALISER LE MOIS</button>
+            <div id="transaction-list"></div>
+            <button class="btn btn-ghost" style="margin-top: 20px;" onclick="resetSystem()">RÉINITIALISER TOUT</button>
         </div>
     </div>
 </div>
 
 <script>
-    let state = JSON.parse(localStorage.getItem('bank_system_v1')) || {
+    let state = JSON.parse(localStorage.getItem('bank_system_v2')) || {
         transactions: [],
-        lastReset: new Date().getMonth()
+        recurring: [] // Stockage des dépenses récurrentes
     };
 
     const RANKS = [
@@ -180,25 +191,41 @@
     ];
 
     function save() {
-        localStorage.setItem('bank_system_v1', JSON.stringify(state));
+        localStorage.setItem('bank_system_v2', JSON.stringify(state));
         updateUI();
     }
 
     function addTransaction(type) {
         const desc = document.getElementById('desc').value;
         const amt = parseFloat(document.getElementById('amount').value);
-
         if (!desc || isNaN(amt)) return;
 
         state.transactions.push({
             id: Date.now(),
             desc: desc,
             amount: type === 'expense' ? -amt : amt,
-            date: new Date()
+            date: new Date(),
+            isRecurring: false
         });
 
         document.getElementById('desc').value = '';
         document.getElementById('amount').value = '';
+        save();
+    }
+
+    function addRecurring() {
+        const desc = document.getElementById('recur-desc').value;
+        const amt = parseFloat(document.getElementById('recur-amount').value);
+        if (!desc || isNaN(amt)) return;
+
+        state.recurring.push({
+            id: 'rec-' + Date.now(),
+            desc: desc,
+            amount: -amt
+        });
+
+        document.getElementById('recur-desc').value = '';
+        document.getElementById('recur-amount').value = '';
         save();
     }
 
@@ -207,20 +234,44 @@
         save();
     }
 
+    function deleteRecurring(id) {
+        state.recurring = state.recurring.filter(r => r.id !== id);
+        save();
+    }
+
     function resetSystem() {
-        if(confirm("Voulez-vous réinitialiser toutes les données ?")) {
+        if(confirm("Effacer tout l'historique et les charges fixes ?")) {
             state.transactions = [];
+            state.recurring = [];
             save();
         }
     }
 
     function updateUI() {
         const list = document.getElementById('transaction-list');
+        const recurList = document.getElementById('recurring-list');
         list.innerHTML = '';
+        recurList.innerHTML = '';
 
         let income = 0;
         let expenses = 0;
+        let totalRecurring = 0;
 
+        // Affichage des récurrentes
+        state.recurring.forEach(r => {
+            totalRecurring += Math.abs(r.amount);
+            recurList.innerHTML += `
+                <div class="transaction-item">
+                    <div class="t-name">${r.desc} <span class="recur-tag">FIXE</span></div>
+                    <div class="t-amt negative">
+                        ${r.amount.toFixed(2)}€
+                        <span style="margin-left:10px; cursor:pointer;" onclick="deleteRecurring('${r.id}')">×</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Affichage des transactions normales
         state.transactions.forEach(t => {
             if (t.amount > 0) income += t.amount;
             else expenses += Math.abs(t.amount);
@@ -233,26 +284,28 @@
                     </div>
                     <div class="t-amt ${t.amount > 0 ? 'positive' : 'negative'}">
                         ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}€
-                        <span style="margin-left:10px; cursor:pointer; color:var(--text-dim)" onclick="deleteTransaction(${t.id})">×</span>
+                        <span style="margin-left:10px; cursor:pointer;" onclick="deleteTransaction(${t.id})">×</span>
                     </div>
                 </div>
             `;
         });
 
-        const total = income - expenses;
+        // Totaux (On soustrait aussi le récurrent du total global)
+        const total = income - expenses - totalRecurring;
         document.getElementById('total-balance').innerText = total.toFixed(2);
         document.getElementById('stat-inc').innerText = income.toFixed(2) + '€';
-        document.getElementById('stat-exp').innerText = expenses.toFixed(2) + '€';
+        document.getElementById('stat-exp').innerText = (expenses + totalRecurring).toFixed(2) + '€';
 
-        // Calcul Jours Restants
+        // MANA JOURNALIER : On calcule ce qu'il reste après avoir payé TOUTES les récurrentes du mois
         const now = new Date();
         const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const daysLeft = (lastDay - now.getDate()) + 1;
         
+        // Le mana journalier ignore les récurrentes car elles sont déjà budgétisées
         const daily = total > 0 ? (total / daysLeft) : 0;
         document.getElementById('daily-allowance').innerText = `MANA JOURNALIER : ${daily.toFixed(2)}€`;
 
-        // Calcul du Rang
+        // Calcul du Rang (basé sur ce qu'il reste du revenu total)
         let ratio = income > 0 ? (total / income) * 100 : 0;
         if (total < 0) ratio = -1;
 
@@ -264,16 +317,12 @@
             }
         }
 
-        // Update Design
         document.documentElement.style.setProperty('--rank-color', currentRank.color);
         document.getElementById('rank-medal').innerText = currentRank.icon;
         document.getElementById('rank-name').innerText = currentRank.name;
-        
-        const progress = Math.min(Math.max(ratio, 0), 100);
-        document.getElementById('progress-bar').style.width = progress + '%';
+        document.getElementById('progress-bar').style.width = Math.min(Math.max(ratio, 0), 100) + '%';
     }
 
-    // Init
     updateUI();
 </script>
 
