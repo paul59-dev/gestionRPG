@@ -72,11 +72,13 @@
         
         .input-group { margin-bottom: 15px; }
         label { display: block; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
-        input {
+        input, select {
             width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
             padding: 12px; color: white; border-radius: 6px; font-size: 1rem; outline: none;
+            font-family: inherit;
         }
-        input:focus { border-color: var(--system-blue); }
+        input:focus, select:focus { border-color: var(--system-blue); }
+        select option { background: #0d1117; color: white; }
 
         .btn {
             padding: 12px; border-radius: 8px; border: none; cursor: pointer;
@@ -97,7 +99,17 @@
         }
         .recur-tag { font-size: 0.6rem; background: rgba(0, 242, 255, 0.1); color: var(--system-blue); padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
         
-        .t-name { font-weight: 600; display: flex; align-items: center; }
+        /* Badges de Catégories */
+        .cat-tag { font-size: 0.55rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; margin-left: 6px; display: inline-block; vertical-align: middle; }
+        .cat-mana { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .cat-food { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+        .cat-vie { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+        .cat-stuff { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .cat-invest { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .cat-imprevu { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .cat-none { background: rgba(255, 255, 255, 0.05); color: var(--text-dim); }
+
+        .t-name { font-weight: 600; align-items: center; }
         .t-amt { font-family: monospace; font-weight: 800; }
         .negative { color: var(--system-red); }
         .positive { color: #22c55e; }
@@ -144,16 +156,29 @@
         <!-- AJOUTER TRANSACTION -->
         <div class="card">
             <div class="system-title">Nouvelle Mission de Flux</div>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
-                <div class="input-group">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div class="input-group" style="margin: 0;">
                     <label>Libellé (ex: Salaire, UberEats)</label>
                     <input type="text" id="desc" placeholder="Objet de la quête...">
                 </div>
-                <div class="input-group">
+                <div class="input-group" style="margin: 0;">
                     <label>Montant (€)</label>
                     <input type="number" id="amount" placeholder="0.00">
                 </div>
             </div>
+            
+            <div class="input-group">
+                <label>Type de Flux (Catégorie)</label>
+                <select id="category">
+                    <option value="vie">🏠 Vie Quotidienne (Courses, Logement...)</option>
+                    <option value="food">🍖 Potions & Rations (Courses, Restos, Uber...)</option>
+                    <option value="stuff">⚔️ Équipement & Loisirs (Sorties, Jeux, Matériel...)</option>
+                    <option value="invest">💎 Cristaux & PEA (Épargne, Investissements...)</option>
+                    <option value="imprevu">⚠️ Anomalie / Imprévu (Urgence, Réparation...)</option>
+                    <option value="mana">🌀 Source de Mana (Revenu / Salaire)</option>
+                </select>
+            </div>
+
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-primary" onclick="addTransaction('income')">+ REVENU</button>
                 <button class="btn" style="background: var(--system-red); color: white;" onclick="addTransaction('expense')">- DÉPENSE</button>
@@ -165,11 +190,20 @@
             <div class="system-title">Charges Récurrentes (Mensuel)</div>
             <div id="recurring-list"></div>
             <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 15px;">
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
                     <input type="text" id="recur-desc" placeholder="Ex: Netflix, Loyer...">
                     <input type="number" id="recur-amount" placeholder="€">
                 </div>
-                <button class="btn btn-ghost" onclick="addRecurring()" style="color: var(--system-blue); border-color: var(--system-blue);">+ AJOUTER CHARGE FIXE</button>
+                <div class="input-group">
+                    <label>Catégorie Fixe</label>
+                    <select id="recur-category">
+                        <option value="vie">🏠 Vie Quotidienne</option>
+                        <option value="food">🍖 Potions & Rations</option>
+                        <option value="stuff">⚔️ Équipement & Loisirs</option>
+                        <option value="invest">💎 Cristaux & PEA</option>
+                    </select>
+                </div>
+                <button id="btn-recur-action" class="btn btn-ghost" onclick="addRecurring()" style="color: var(--system-blue); border-color: var(--system-blue);">+ AJOUTER CHARGE FIXE</button>
             </div>
         </div>
 
@@ -185,8 +219,11 @@
 <script>
     let state = JSON.parse(localStorage.getItem('bank_system_v2')) || {
         transactions: [],
-        recurring: []
+        recurring: [],
+        lastProcessedMonth: new Date().getMonth()
     };
+
+    let editingRecurringId = null; 
 
     const RANKS = [
         { name: "SANG-FROID (S)", min: 80, icon: "S", color: "#ff0055" },
@@ -197,21 +234,72 @@
         { name: "NOMADE (E)", min: -999999, icon: "E", color: "#94a3b8" }
     ];
 
+    const CAT_LABELS = {
+        mana: { txt: 'Mana', cls: 'cat-mana' },
+        food: { txt: 'Potion', cls: 'cat-food' },
+        vie: { txt: 'Vie Q.', cls: 'cat-vie' },
+        stuff: { txt: 'Stuff', cls: 'cat-stuff' },
+        invest: { txt: 'Invest', cls: 'cat-invest' },
+        imprevu: { txt: 'Imprévu', cls: 'cat-imprevu' }
+    };
+
+    function getCatBadge(catKey) {
+        const cat = CAT_LABELS[catKey];
+        if (!cat) return `<span class="cat-tag cat-none">Flux</span>`;
+        return `<span class="cat-tag ${cat.cls}">${cat.txt}</span>`;
+    }
+
     function save() {
         localStorage.setItem('bank_system_v2', JSON.stringify(state));
         updateUI();
     }
 
+    function checkMonthTransition() {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+
+        if (state.lastProcessedMonth !== undefined && state.lastProcessedMonth !== currentMonth) {
+            let income = 0;
+            let expenses = 0;
+            let totalRecurring = 0;
+
+            state.recurring.forEach(r => totalRecurring += Math.abs(r.amount));
+            state.transactions.forEach(t => {
+                if (t.amount > 0) income += t.amount;
+                else expenses += Math.abs(t.amount);
+            });
+
+            const leftover = income - expenses - totalRecurring;
+            state.transactions = [];
+
+            if (leftover > 0) {
+                state.transactions.push({
+                    id: Date.now(),
+                    desc: "💰 Report Trésorerie M-1",
+                    amount: leftover,
+                    date: now.toISOString(),
+                    category: "mana",
+                    isRecurring: false
+                });
+            }
+
+            state.lastProcessedMonth = currentMonth;
+            localStorage.setItem('bank_system_v2', JSON.stringify(state));
+        }
+    }
+
     function addTransaction(type) {
         const desc = document.getElementById('desc').value;
         const amt = parseFloat(document.getElementById('amount').value);
+        const cat = document.getElementById('category').value;
         if (!desc || isNaN(amt)) return;
 
         state.transactions.push({
             id: Date.now(),
             desc: desc,
             amount: type === 'expense' ? -amt : amt,
-            date: new Date(),
+            date: new Date().toISOString(),
+            category: cat,
             isRecurring: false
         });
 
@@ -220,16 +308,47 @@
         save();
     }
 
+    function editRecurring(id) {
+        const item = state.recurring.find(r => r.id === id);
+        if (!item) return;
+
+        document.getElementById('recur-desc').value = item.desc;
+        document.getElementById('recur-amount').value = Math.abs(item.amount);
+        document.getElementById('recur-category').value = item.category;
+
+        editingRecurringId = id;
+        const btn = document.getElementById('btn-recur-action');
+        btn.innerText = "💾 Enregistrer Modification";
+        btn.style.borderColor = "var(--system-gold)";
+        btn.style.color = "var(--system-gold)";
+    }
+
     function addRecurring() {
         const desc = document.getElementById('recur-desc').value;
         const amt = parseFloat(document.getElementById('recur-amount').value);
+        const cat = document.getElementById('recur-category').value;
         if (!desc || isNaN(amt)) return;
 
-        state.recurring.push({
-            id: 'rec-' + Date.now(),
-            desc: desc,
-            amount: -amt
-        });
+        if (editingRecurringId !== null) {
+            const item = state.recurring.find(r => r.id === editingRecurringId);
+            if (item) {
+                item.desc = desc;
+                item.amount = -amt;
+                item.category = cat;
+            }
+            editingRecurringId = null;
+            const btn = document.getElementById('btn-recur-action');
+            btn.innerText = "+ AJOUTER CHARGE FIXE";
+            btn.style.borderColor = "var(--system-blue)";
+            btn.style.color = "var(--system-blue)";
+        } else {
+            state.recurring.push({
+                id: 'rec-' + Date.now(),
+                desc: desc,
+                amount: -amt,
+                category: cat
+            });
+        }
 
         document.getElementById('recur-desc').value = '';
         document.getElementById('recur-amount').value = '';
@@ -242,6 +361,13 @@
     }
 
     function deleteRecurring(id) {
+        if (editingRecurringId === id) {
+            editingRecurringId = null;
+            const btn = document.getElementById('btn-recur-action');
+            btn.innerText = "+ AJOUTER CHARGE FIXE";
+            btn.style.borderColor = "var(--system-blue)";
+            btn.style.color = "var(--system-blue)";
+        }
         state.recurring = state.recurring.filter(r => r.id !== id);
         save();
     }
@@ -250,6 +376,7 @@
         if(confirm("Effacer tout l'historique et les charges fixes ?")) {
             state.transactions = [];
             state.recurring = [];
+            state.lastProcessedMonth = new Date().getMonth();
             save();
         }
     }
@@ -268,23 +395,33 @@
             totalRecurring += Math.abs(r.amount);
             recurList.innerHTML += `
                 <div class="transaction-item">
-                    <div class="t-name">${r.desc} <span class="recur-tag">FIXE</span></div>
+                    <div class="t-name">
+                        ${r.desc} 
+                        <span class="recur-tag">FIXE</span>
+                        ${getCatBadge(r.category)}
+                    </div>
                     <div class="t-amt negative">
                         ${r.amount.toFixed(2)}€
+                        <span style="margin-left:15px; cursor:pointer; color:var(--system-blue);" onclick="editRecurring('${r.id}')">✏️</span>
                         <span style="margin-left:10px; cursor:pointer;" onclick="deleteRecurring('${r.id}')">×</span>
                     </div>
                 </div>
             `;
         });
 
-        state.transactions.forEach(t => {
+        const displayTransactions = [...state.transactions].reverse();
+
+        displayTransactions.forEach(t => {
             if (t.amount > 0) income += t.amount;
             else expenses += Math.abs(t.amount);
 
             list.innerHTML += `
                 <div class="transaction-item">
                     <div>
-                        <div class="t-name">${t.desc}</div>
+                        <div class="t-name">
+                            ${t.desc}
+                            ${getCatBadge(t.category)}
+                        </div>
                         <div style="font-size:0.6rem; color:var(--text-dim)">${new Date(t.date).toLocaleDateString()}</div>
                     </div>
                     <div class="t-amt ${t.amount > 0 ? 'positive' : 'negative'}">
@@ -324,17 +461,16 @@
         document.getElementById('progress-bar').style.width = Math.min(Math.max(ratio, 0), 100) + '%';
     }
 
+    checkMonthTransition();
     updateUI();
 
-    // Enregistrement du Service Worker pour le mode PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Système éveillé (SW configuré) !'))
-                .catch(err => console.log('Échec de l\'éveil du SW : ', err));
+                .then(reg => console.log('Système synchronisé.'))
+                .catch(err => console.log('Erreur SW : ', err));
         });
     }
 </script>
-
 </body>
 </html>
