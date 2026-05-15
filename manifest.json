@@ -1,22 +1,22 @@
 {
-  "name": "S-SYSTEM",
-  "short_name": "S-SYSTEM",
-  "start_url": "index.html",
-  "display": "standalone",
-  "background_color": "#05070a",
-  "theme-color": "#05070a",
+  "short_name": "Eveil",
+  "name": "Eveil Discipline Ladder",
   "icons": [
     {
-      "src": "icon-192.png",
-      "sizes": "192x192",
+      "src": "icon.png",
+      "sizes": "192x192 512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#05070a",
+  "theme_color": "#05070a"
 }

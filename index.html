@@ -12,7 +12,7 @@
     <meta name="theme-color" content="#05070a">
     
     <!-- Lien vers le Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=2">
     
     <!-- Icônes universelles pointant vers ton nouveau fichier SVG -->
     <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -604,13 +604,14 @@
     checkMonthTransition();
     updateUI();
 
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Système synchronisé.'))
-                .catch(err => console.log('Erreur SW : ', err));
-        });
-    }
+    // Force la désinstallation de l'ancien Service Worker pour vider le cache PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+            registration.unregister();
+        }
+    });
+}
 </script>
 </body>
 </html>
