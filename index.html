@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>S-SYSTEM | Finance Leveling</title>
+    <style>
+        :root {
+            --bg: #05070a;
+            --card: #0d1117;
+            --text: #f8fafc;
+            --text-dim: #64748b;
+            --border: rgba(255, 255, 255, 0.08);
+            --rank-color: #00f2ff; 
+            --system-blue: #00f2ff;
+            --system-gold: #f59e0b;
+            --system-red: #ff0033;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0; padding: 15px;
+            display: flex; justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .system-glow {
+            position: fixed; top: -250px; right: -250px; width: 700px; height: 700px;
+            background: radial-gradient(circle, var(--rank-color) 0%, rgba(0,0,0,0) 75%);
+            filter: blur(60px); opacity: 0.2; z-index: -1; pointer-events: none;
+        }
+
+        .container { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 20px; }
+
+        @media (min-width: 850px) {
+            .container { flex-direction: row; align-items: flex-start; }
+            .sidebar { width: 350px; position: sticky; top: 20px; }
+            .main-content { flex-grow: 1; }
+        }
+
+        .card {
+            background: rgba(13, 17, 23, 0.85);
+            border-radius: 12px; padding: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(20px);
+        }
+
+        .system-title { font-size: 0.65rem; letter-spacing: 3px; color: var(--rank-color); text-transform: uppercase; margin-bottom: 10px; font-weight: 800; }
+        
+        /* Rank Display */
+        .rank-box { text-align: center; padding: 10px 0; }
+        #rank-medal { font-size: 6rem; font-weight: 900; color: var(--rank-color); display: block; text-shadow: 0 0 20px var(--rank-color); }
+        .balance-display { font-size: 2.2rem; font-weight: 900; margin: 10px 0; font-family: monospace; }
+        
+        /* Inputs */
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; }
+        input {
+            width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            padding: 12px; color: white; border-radius: 6px; font-size: 1rem;
+        }
+
+        .btn {
+            padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+            font-weight: 800; text-transform: uppercase; font-size: 0.7rem;
+            width: 100%; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-primary { background: var(--system-blue); color: #000; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .stat-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+        .stat-val { font-weight: 900; font-size: 1.1rem; display: block; margin-top: 5px; }
+
+        /* Transactions */
+        .transaction-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .t-name { font-weight: 600; }
+        .t-amt { font-family: monospace; font-weight: 800; }
+        .negative { color: var(--system-red); }
+        .positive { color: #22c55e; }
+
+        .progress-container { background: rgba(255, 255, 255, 0.05); height: 6px; margin: 15px 0; border-radius: 10px; }
+        #progress-bar { background: var(--rank-color); height: 100%; width: 0%; box-shadow: 0 0 15px var(--rank-color); transition: 0.5s; }
+    </style>
+</head>
+<body>
+
+<div class="system-glow"></div>
+
+<div class="container">
+    <!-- SIDEBAR: STATUT -->
+    <div class="sidebar">
+        <div class="card">
+            <div class="rank-box">
+                <div class="system-title">Niveau de Trésorerie</div>
+                <span id="rank-medal">E</span>
+                <div id="rank-name" style="font-weight: 900; color: var(--rank-color);">NOMADE DU BUDGET</div>
+                
+                <div class="balance-display"><span id="total-balance">0.00</span>€</div>
+                
+                <div class="progress-container"><div id="progress-bar"></div></div>
+                <div id="daily-allowance" style="font-size: 0.8rem; color: var(--system-gold); font-weight: 700;">
+                    MANA JOURNALIER : 0.00€
+                </div>
+                <p style="font-size: 0.6rem; color: var(--text-dim); margin-top: 5px;">Reste à dépenser par jour pour finir le mois</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <label>Revenus</label>
+                    <span id="stat-inc" class="stat-val positive">0€</span>
+                </div>
+                <div class="stat-card">
+                    <label>Dépenses</label>
+                    <span id="stat-exp" class="stat-val negative">0€</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN: GESTION -->
+    <div class="main-content">
+        <!-- AJOUTER TRANSACTION -->
+        <div class="card">
+            <div class="system-title">Nouvelle Mission de Flux</div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                <div class="input-group">
+                    <label>Libellé (ex: Loyer, Salaire)</label>
+                    <input type="text" id="desc" placeholder="Objet de la quête...">
+                </div>
+                <div class="input-group">
+                    <label>Montant (€)</label>
+                    <input type="number" id="amount" placeholder="0.00">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="addTransaction('income')">+ REVENU</button>
+                <button class="btn" style="background: var(--system-red); color: white;" onclick="addTransaction('expense')">- DÉPENSE</button>
+            </div>
+        </div>
+
+        <!-- LISTE DES FLUX -->
+        <div class="card">
+            <div class="system-title">Historique des Flux de Mana</div>
+            <div id="transaction-list">
+                <!-- Les transactions apparaîtront ici -->
+            </div>
+            <button class="btn btn-ghost" style="margin-top: 20px;" onclick="resetSystem()">RÉINITIALISER LE MOIS</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let state = JSON.parse(localStorage.getItem('bank_system_v1')) || {
+        transactions: [],
+        lastReset: new Date().getMonth()
+    };
+
+    const RANKS = [
+        { name: "SANG-FROID (S)", min: 80, icon: "S", color: "#ff0055" },
+        { name: "CHASSEUR D'ÉLITE (A)", min: 60, icon: "A", color: "#f59e0b" },
+        { name: "MAGE DE GUERRE (B)", min: 40, icon: "B", color: "#a855f7" },
+        { name: "AVENTURIER (C)", min: 20, icon: "C", color: "#3b82f6" },
+        { name: "SURVIVANT (D)", min: 5, icon: "D", color: "#22c55e" },
+        { name: "NOMADE (E)", min: -999999, icon: "E", color: "#94a3b8" }
+    ];
+
+    function save() {
+        localStorage.setItem('bank_system_v1', JSON.stringify(state));
+        updateUI();
+    }
+
+    function addTransaction(type) {
+        const desc = document.getElementById('desc').value;
+        const amt = parseFloat(document.getElementById('amount').value);
+
+        if (!desc || isNaN(amt)) return;
+
+        state.transactions.push({
+            id: Date.now(),
+            desc: desc,
+            amount: type === 'expense' ? -amt : amt,
+            date: new Date()
+        });
+
+        document.getElementById('desc').value = '';
+        document.getElementById('amount').value = '';
+        save();
+    }
+
+    function deleteTransaction(id) {
+        state.transactions = state.transactions.filter(t => t.id !== id);
+        save();
+    }
+
+    function resetSystem() {
+        if(confirm("Voulez-vous réinitialiser toutes les données ?")) {
+            state.transactions = [];
+            save();
+        }
+    }
+
+    function updateUI() {
+        const list = document.getElementById('transaction-list');
+        list.innerHTML = '';
+
+        let income = 0;
+        let expenses = 0;
+
+        state.transactions.forEach(t => {
+            if (t.amount > 0) income += t.amount;
+            else expenses += Math.abs(t.amount);
+
+            list.innerHTML += `
+                <div class="transaction-item">
+                    <div>
+                        <div class="t-name">${t.desc}</div>
+                        <div style="font-size:0.6rem; color:var(--text-dim)">${new Date(t.date).toLocaleDateString()}</div>
+                    </div>
+                    <div class="t-amt ${t.amount > 0 ? 'positive' : 'negative'}">
+                        ${t.amount > 0 ? '+' : ''}${t.amount.toFixed(2)}€
+                        <span style="margin-left:10px; cursor:pointer; color:var(--text-dim)" onclick="deleteTransaction(${t.id})">×</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        const total = income - expenses;
+        document.getElementById('total-balance').innerText = total.toFixed(2);
+        document.getElementById('stat-inc').innerText = income.toFixed(2) + '€';
+        document.getElementById('stat-exp').innerText = expenses.toFixed(2) + '€';
+
+        // Calcul Jours Restants
+        const now = new Date();
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysLeft = (lastDay - now.getDate()) + 1;
+        
+        const daily = total > 0 ? (total / daysLeft) : 0;
+        document.getElementById('daily-allowance').innerText = `MANA JOURNALIER : ${daily.toFixed(2)}€`;
+
+        // Calcul du Rang
+        let ratio = income > 0 ? (total / income) * 100 : 0;
+        if (total < 0) ratio = -1;
+
+        let currentRank = RANKS[5];
+        for (let r of RANKS) {
+            if (ratio >= r.min) {
+                currentRank = r;
+                break;
+            }
+        }
+
+        // Update Design
+        document.documentElement.style.setProperty('--rank-color', currentRank.color);
+        document.getElementById('rank-medal').innerText = currentRank.icon;
+        document.getElementById('rank-name').innerText = currentRank.name;
+        
+        const progress = Math.min(Math.max(ratio, 0), 100);
+        document.getElementById('progress-bar').style.width = progress + '%';
+    }
+
+    // Init
+    updateUI();
+</script>
+
+</body>
+</html>
